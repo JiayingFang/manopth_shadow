@@ -17,7 +17,7 @@ class ManoLayer(Module):
     ]
 
     def __init__(self,
-                 center_idx=None,
+                 center_idx=12,# None,
                  flat_hand_mean=True,
                  ncomps=6,
                  side='right',
@@ -111,6 +111,7 @@ class ManoLayer(Module):
                 th_pose_coeffs,
                 th_betas=torch.zeros(1),
                 th_trans=torch.zeros(1),
+                th_scale=torch.zeros(1),
                 root_palm=torch.Tensor([0]),
                 share_betas=torch.Tensor([0]),
                 ):
@@ -248,7 +249,8 @@ class ManoLayer(Module):
         # In addition to MANO reference joints we sample vertices on each finger
         # to serve as finger tips
         if self.side == 'right':
-            tips = th_verts[:, [745, 317, 444, 556, 673]]
+            # tips = th_verts[:, [745, 317, 444, 556, 673]]
+            tips = th_verts[:, [756, 317, 455, 556, 673]]
         else:
             tips = th_verts[:, [745, 317, 445, 556, 673]]
         if bool(root_palm):
@@ -261,14 +263,18 @@ class ManoLayer(Module):
 
         if th_trans is None or bool(torch.norm(th_trans) == 0):
             if self.center_idx is not None:
-                center_joint = th_jtr[:, self.center_idx].unsqueeze(1)
-                th_jtr = th_jtr - center_joint
-                th_verts = th_verts - center_joint
+                center_joint = torch.clone(th_jtr[:, self.center_idx].unsqueeze(1))
+                top_joint = torch.clone(th_jtr[:, 0].unsqueeze(1))
+                # print(torch.sqrt(torch.sum((center_joint-top_joint)**2)))
+                th_jtr = (th_jtr - center_joint)/torch.sqrt(torch.sum((center_joint-top_joint)**2))
+                th_verts = (th_verts - center_joint)/torch.sqrt(torch.sum((center_joint-top_joint)**2))
         else:
+            th_jtr = th_jtr * th_scale.unsqueeze(1)
             th_jtr = th_jtr + th_trans.unsqueeze(1)
+            th_verts = th_verts * th_scale.unsqueeze(1)
             th_verts = th_verts + th_trans.unsqueeze(1)
 
         # Scale to milimeters
-        th_verts = th_verts * 1000
-        th_jtr = th_jtr * 1000
+        # th_verts = th_verts * 1000
+        # th_jtr = th_jtr * 1000
         return th_verts, th_jtr
