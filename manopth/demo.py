@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d.art3d import juggle_axes
 import numpy as np
 import torch
 
-from manopth.manolayer import ManoLayer
+from manopth_shadow.manopth.manolayer import ManoLayer
 
 id_list = [38, 122, 92, 214, 79, 78, 239, 234, 118, 215, 108, 279, 117, 119, 120, 121]
 
